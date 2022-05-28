@@ -1,24 +1,77 @@
 extends KinematicBody2D
 
-const UP = Vector2(0,-1)
-export var BASESPEED = 400
-export var BASEJUMP = 150
-export var GRAVITY = 26
-export var MAXFALLSPEED = 900
-export var ACCEL = 20
-export var DEACCEL = 50
-var jump_force = -700
-var velocity = Vector2()
-var double_jump = 1
-var facing = 0
+export var MAXWALKSPEED = 400
+export var BASEJUMP = 8000
+export var GRAVITY = 1200
+export var MAXFALLSPEED = 1600
+export var ACCEL = 900
+export var DEACCEL = 1000
+const FRICTION = 1000
+const DRAG = 400
+var jump_magnitude = 700
+var walking_magnitude = 3000
+var velocity = Vector2.ZERO
+var wall_jump = true
+var weight = 1
+var jumping = false
+
 
 func _physics_process(delta):
+	var net_force = get_net_forces(delta)
 	
-	motion_physics(delta)
+	velocity += (net_force/weight)*delta
+	velocity += get_impulses()
+	velocity = move_and_slide(velocity,Vector2.UP)
 	get_walking_sounds()
-	jumping_physics()
-	
+	#jumping_physics()
 	print (velocity)
+
+func get_net_forces(delta):
+	
+	#gravity
+	var gravity_force = Vector2.DOWN* GRAVITY* weight
+	
+	#friction
+	var friction = get_friction_and_drag()
+	if abs((friction.x/weight)*delta) > abs(velocity.x):
+		friction.x = -velocity.x*weight/delta
+	
+	#lateral_force
+	var walking_force = Vector2.ZERO
+	if Input.is_action_pressed("move_right") and velocity.x < MAXWALKSPEED:
+		walking_force += Vector2.RIGHT*walking_magnitude
+	if Input.is_action_pressed("move_left") and -velocity.x < MAXWALKSPEED:
+		walking_force += Vector2.LEFT*walking_magnitude
+		
+	return gravity_force + walking_force + friction
+	
+func get_friction_and_drag():
+	var drag = Vector2.ZERO
+	var friction = Vector2.ZERO
+	if is_on_floor():
+		friction += -velocity.normalized()*FRICTION
+	else:
+		if is_on_wall():
+			friction += -velocity.normalized() *(FRICTION/3)
+	drag += -velocity.normalized()*DRAG
+	return friction+drag
+
+func get_impulses():
+	var jump_force = Vector2.ZERO
+	if Input.is_action_just_pressed("jump") and is_on_floor():
+		jump_force += (Vector2.UP *jump_magnitude)/weight
+	
+	#wall_jump
+	if wall_jump == false and is_on_floor():
+		wall_jump = true
+	if Input.is_action_just_pressed("jump") and is_on_wall() and wall_jump == true and !is_on_floor():
+		velocity.y = 0
+		jump_force += Vector2.UP *jump_magnitude /weight
+		wall_jump = false
+	
+	if Input.is_action_just_released("jump") and velocity.y < 0:
+		jump_force = (Vector2.UP *velocity.y*.5)/weight
+	return jump_force
 
 func get_walking_sounds():
 	if velocity.x != 0 and is_on_floor():
@@ -27,58 +80,3 @@ func get_walking_sounds():
 	else:
 		$WalkingSound.stop()
 
-#this contains left to right inputs, acceleration, and deacceleration
-func motion_physics(delta):
-	if Input.is_action_pressed("move_right"):
-		velocity.x += ACCEL
-		$AnimatedSprite.flip_h = false
-	elif Input.is_action_pressed("move_left"):
-			velocity.x -= ACCEL
-			$AnimatedSprite.flip_h = true
-	#This is the motion deacceleration
-	else:
-		if abs(velocity.x) < 40:
-			velocity.x= 0 
-		#Air Deacceleration
-		elif ! is_on_floor():
-			if velocity.x > 0:
-				velocity.x -= ACCEL
-			elif velocity.x < 0:
-				velocity.x += ACCEL
-		#Ground Deacceleration
-		elif is_on_floor():
-			if velocity.x > 0:
-				velocity.x -= DEACCEL
-			elif velocity.x < 0:
-				velocity.x += DEACCEL
-	velocity.x = clamp(velocity.x,-BASESPEED,BASESPEED)
-	
-	#this fixes a bug where pivoting causes you to slide more when having both buttons pressed.
-	if Input.is_action_pressed("move_right") and Input.is_action_pressed("move_left") and is_on_floor():
-		if velocity.x > 0:
-			velocity.x -= DEACCEL
-		elif velocity.x < 0:
-			velocity.x += DEACCEL
-	move_and_slide(velocity,Vector2(0,-1))
-
-# This also contains the wall sliding physics which are currently broken
-## To-do's: try and reimplement wall friction without breaking the jump
-func jumping_physics():
-		if Input.is_action_just_pressed("jump") and is_on_floor():
-			velocity.y = BASEJUMP
-			$JumpingSound.play()
-			double_jump = 1
-			if Input.is_action_pressed("jump"):
-				velocity.y = jump_force
-		if Input.is_action_just_pressed("jump") and is_on_wall() and double_jump == 1 and ! is_on_floor():
-			get_facing_direction()
-			velocity.x = 300*facing
-			velocity.y = jump_force * .90
-			$JumpingSound.play()
-			double_jump = 0
-
-func get_facing_direction():
-	if velocity.x > 0:
-		facing = -1
-	if velocity.x < 0:
-		facing = 1
