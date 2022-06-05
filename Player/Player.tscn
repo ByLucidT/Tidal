@@ -1,47 +1,93 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=24 format=2]
 
 [ext_resource path="res://Test Art/Standing Character.png" type="Texture" id=1]
 [ext_resource path="res://Player/Player.gd" type="Script" id=2]
 [ext_resource path="res://Player/Sounds/Jump2.wav" type="AudioStream" id=3]
 [ext_resource path="res://Player/Sounds/Demo walking.mp3" type="AudioStream" id=4]
+[ext_resource path="res://Test Art/Walking Animation.png" type="Texture" id=5]
+[ext_resource path="res://Test Art/Tidal Character Jumping.png" type="Texture" id=6]
+[ext_resource path="res://Test Art/Jump Indicator.png" type="Texture" id=7]
+[ext_resource path="res://Player/JumpIndicator.gd" type="Script" id=8]
 
-[sub_resource type="AtlasTexture" id=1]
-atlas = ExtResource( 1 )
-region = Rect2( 0, 0, 224, 224 )
+[sub_resource type="AtlasTexture" id=13]
+atlas = ExtResource( 5 )
+region = Rect2( 0, 0, 64, 64 )
 
-[sub_resource type="AtlasTexture" id=2]
+[sub_resource type="AtlasTexture" id=14]
+atlas = ExtResource( 5 )
+region = Rect2( 0, 64, 64, 64 )
+
+[sub_resource type="AtlasTexture" id=15]
+atlas = ExtResource( 5 )
+region = Rect2( 0, 128, 64, 64 )
+
+[sub_resource type="AtlasTexture" id=16]
+atlas = ExtResource( 5 )
+region = Rect2( 0, 192, 64, 64 )
+
+[sub_resource type="AtlasTexture" id=10]
+atlas = ExtResource( 6 )
+region = Rect2( 64, 0, 64, 64 )
+
+[sub_resource type="AtlasTexture" id=11]
+atlas = ExtResource( 6 )
+region = Rect2( 0, 64, 64, 64 )
+
+[sub_resource type="AtlasTexture" id=12]
+atlas = ExtResource( 6 )
+region = Rect2( 64, 64, 64, 64 )
+
+[sub_resource type="AtlasTexture" id=17]
 atlas = ExtResource( 1 )
-region = Rect2( 0, 224, 224, 224 )
+region = Rect2( 0, 0, 64, 64 )
+
+[sub_resource type="AtlasTexture" id=18]
+atlas = ExtResource( 1 )
+region = Rect2( 0, 64, 64, 64 )
 
 [sub_resource type="SpriteFrames" id=3]
 animations = [ {
-"frames": [ SubResource( 1 ), SubResource( 2 ) ],
+"frames": [ SubResource( 13 ), SubResource( 14 ), SubResource( 15 ), SubResource( 16 ) ],
+"loop": true,
+"name": "Walking",
+"speed": 3.0
+}, {
+"frames": [ SubResource( 10 ), SubResource( 11 ), SubResource( 12 ) ],
+"loop": false,
+"name": "Jumping",
+"speed": 3.0
+}, {
+"frames": [ SubResource( 17 ), SubResource( 18 ) ],
 "loop": true,
 "name": "Standing",
-"speed": 5.0
+"speed": 3.0
 } ]
 
 [sub_resource type="RectangleShape2D" id=4]
-extents = Vector2( 16.375, 39.375 )
+extents = Vector2( 16.375, 37.5 )
+
+[sub_resource type="AtlasTexture" id=19]
+atlas = ExtResource( 7 )
+region = Rect2( 0, 0, 16, 16 )
+
+[sub_resource type="AtlasTexture" id=20]
+atlas = ExtResource( 7 )
+region = Rect2( 16, 0, 16, 16 )
+
+[sub_resource type="AtlasTexture" id=21]
+atlas = ExtResource( 7 )
+region = Rect2( 32, 0, 16, 16 )
+
+[sub_resource type="SpriteFrames" id=22]
+animations = [ {
+"frames": [ SubResource( 19 ), SubResource( 20 ), SubResource( 21 ) ],
+"loop": false,
+"name": "Light Indicator",
+"speed": 5.0
+} ]
 
 [node name="Player" type="KinematicBody2D"]
 script = ExtResource( 2 )
-
-[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
-scale = Vector2( 0.4375, 0.4375 )
-frames = SubResource( 3 )
-animation = "Standing"
-playing = true
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2( 1.625, 2.625 )
-shape = SubResource( 4 )
-
-[node name="Camera2D" type="Camera2D" parent="."]
-current = true
-smoothing_enabled = true
-offset_v = -0.46
-drag_margin_bottom = 0.78
 
 [node name="WalkingSound" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource( 4 )
@@ -50,3 +96,37 @@ stream = ExtResource( 4 )
 stream = ExtResource( 3 )
 
 [node name="CyoteTimer" type="Timer" parent="."]
+wait_time = 0.1
+one_shot = true
+
+[node name="WallJumpTimer" type="Timer" parent="."]
+wait_time = 0.1
+one_shot = true
+
+[node name="PlayerSprite" type="AnimatedSprite" parent="."]
+position = Vector2( 4.82798e-06, 2.21428 )
+scale = Vector2( 1.46875, 1.46875 )
+frames = SubResource( 3 )
+animation = "Walking"
+speed_scale = 2.0
+playing = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2( 1.625, 3.5 )
+shape = SubResource( 4 )
+
+[node name="Camera2D" type="Camera2D" parent="."]
+current = true
+smoothing_enabled = true
+offset_v = -0.46
+drag_margin_bottom = 0.78
+
+[node name="JumpIndicator" type="AnimatedSprite" parent="."]
+position = Vector2( -40, -24 )
+scale = Vector2( 3, 3 )
+frames = SubResource( 22 )
+animation = "Light Indicator"
+script = ExtResource( 8 )
+
+[connection signal="timeout" from="CyoteTimer" to="." method="_on_CyoteTimer_timeout"]
+[connection signal="timeout" from="WallJumpTimer" to="." method="_on_WallJumpTimer_timeout"]
