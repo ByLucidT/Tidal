@@ -7,7 +7,7 @@ export var MAXFALLSPEED = 1200
 export var ACCEL = 900
 export var DEACCEL = 1000
 export var WALLJUMPPUSHBACK = 600
-const FRICTION = 1000
+const FRICTION = 1200
 const HORIZONTALDRAG = 900
 const VERTICALDRAG = 400
 
@@ -154,6 +154,7 @@ func simulate_pickup():
 	if Input.is_action_just_pressed("Pickup"):
 		items_held += 1
 	WEIGHT = 1+ (.025 * items_held)
+	print (items_held)
 
 func get_collisions():
 	for i in get_slide_count():
